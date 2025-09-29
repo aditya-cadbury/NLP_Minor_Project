@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Spam Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Card styles */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea::placeholder {
+            color: #999;
+        }
+
+        /* Button styles */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        /* Result styles */
+        .result-container {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid;
+            display: none;
+        }
+
+        .result-spam {
+            background: #fee;
+            border-color: #f56565;
+            color: #c53030;
+        }
+
+        .result-not-spam {
+            background: #f0fff4;
+            border-color: #48bb78;
+            color: #2f855a;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result-confidence {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Dashboard styles */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            min-width: 250px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Table styles */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table th,
+        .table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .prediction-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .prediction-spam {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .prediction-not-spam {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .sms-text {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e1e5e9;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .navbar {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .table th,
+            .table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .sms-text {
+                max-width: 200px;
+            }
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i> SMS Spam Detection
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link active" data-page="detection">Detection</a></li>
+                <li><a href="#" class="nav-link" data-page="dashboard">Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Detection Page -->
+        <div id="detection-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="card-title">SMS Spam Detection</h1>
+                    <p class="card-subtitle">Enter an SMS message below to check if it's spam or not</p>
+                </div>
+                
+                <form id="sms-form">
+                    <div class="form-group">
+                        <label for="sms-text" class="form-label">SMS Message</label>
+                        <textarea 
+                            id="sms-text" 
+                            class="form-textarea" 
+                            placeholder="Paste or type your SMS message here..."
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="check-btn">
+                        <i class="fas fa-search"></i>
+                        Check SMS
+                    </button>
+                </form>
+
+                <!-- Loading spinner -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing SMS message...</p>
+                </div>
+
+                <!-- Result display -->
+                <div class="result-container" id="result-container">
+                    <div class="result-title" id="result-title">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="result-label"></span>
+                    </div>
+                    <div class="result-confidence" id="result-confidence"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page hidden">
+            <div class="card">
+                <div class="dashboard-header">
+                    <div>
+                        <h1 class="card-title">SMS Messages Dashboard</h1>
+                        <p class="card-subtitle">View and manage all analyzed SMS messages</p>
+                    </div>
+                    <div class="search-container">
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            class="search-input" 
+                            placeholder="Search messages..."
+                        >
+                        <button class="btn btn-secondary" id="refresh-btn">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+
+                <!-- Messages Table -->
+                <div class="table-container">
+                    <table class="table" id="messages-table">
+                        <thead>
+                            <tr>
+                                <th>SMS Text</th>
+                                <th>Prediction</th>
+                                <th>Confidence</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messages-tbody">
+                            <!-- Messages will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty state -->
+                <div class="empty-state hidden" id="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No messages found</h3>
+                    <p>Start by analyzing some SMS messages to see them here.</p>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination">
+                    <!-- Pagination will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentPage = 1;
+        let currentSearch = '';
+        let totalPages = 1;
+
+        // DOM elements
+        const detectionPage = document.getElementById('detection-page');
+        const dashboardPage = document.getElementById('dashboard-page');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const smsForm = document.getElementById('sms-form');
+        const smsText = document.getElementById('sms-text');
+        const checkBtn = document.getElementById('check-btn');
+        const loading = document.getElementById('loading');
+        const resultContainer = document.getElementById('result-container');
+        const resultTitle = document.getElementById('result-title');
+        const resultLabel = document.getElementById('result-label');
+        const resultConfidence = document.getElementById('result-confidence');
+        const searchInput = document.getElementById('search-input');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const messagesTbody = document.getElementById('messages-tbody');
+        const pagination = document.getElementById('pagination');
+        const statsGrid = document.getElementById('stats-grid');
+        const emptyState = document.getElementById('empty-state');
+
+        // Navigation
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = e.target.dataset.page;
+                showPage(page);
+                
+                // Update active nav link
+                navLinks.forEach(l => l.classList.remove('active'));
+                e.target.classList.add('active');
+            });
+        });
+
+        function showPage(page) {
+            if (page === 'detection') {
+                detectionPage.classList.remove('hidden');
+                dashboardPage.classList.add('hidden');
+            } else if (page === 'dashboard') {
+                detectionPage.classList.add('hidden');
+                dashboardPage.classList.remove('hidden');
+                loadDashboard();
+            }
+        }
+
+        // SMS Detection Form
+        smsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const text = smsText.value.trim();
+            if (!text) return;
+
+            // Show loading state
+            checkBtn.disabled = true;
+            loading.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('http://localhost:5001/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sms_text: text })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error analyzing SMS: ' + error.message);
+            } finally {
+                checkBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        function displayResult(data) {
+            const isSpam = data.label === 'spam';
+            
+            resultContainer.className = `result-container ${isSpam ? 'result-spam' : 'result-not-spam'}`;
+            resultContainer.style.display = 'block';
+            
+            resultTitle.innerHTML = `
+                <i class="fas ${isSpam ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+                <span>${isSpam ? 'SPAM DETECTED' : 'NOT SPAM'}</span>
+            `;
+            
+            resultConfidence.textContent = `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
+        }
+
+        // Dashboard functions
+        async function loadDashboard() {
+            await loadStats();
+            await loadMessages();
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('http://localhost:5001/stats');
+                const data = await response.json();
+
+                if (response.ok) {
+                    statsGrid.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-number">${data.total_messages}</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${data.spam_count}</div>
+                            <div class="stat-label">Spam Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${data.not_spam_count}</div>
+                            <div class="stat-label">Not Spam</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${data.spam_percentage.toFixed(1)}%</div>
+                            <div class="stat-label">Spam Rate</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 10,
+                    search: currentSearch
+                });
+
+                const response = await fetch(`http://localhost:5001/messages?${params}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayMessages(data.messages);
+                    updatePagination(data);
+                } else {
+                    throw new Error(data.error || 'Failed to load messages');
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                messagesTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">Error loading messages</td></tr>';
+            }
+        }
+
+        function displayMessages(messages) {
+            if (messages.length === 0) {
+                messagesTbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            
+            messagesTbody.innerHTML = messages.map(msg => `
+                <tr>
+                    <td class="sms-text" title="${msg.sms_text}">${msg.sms_text}</td>
+                    <td>
+                        <span class="prediction-badge prediction-${msg.prediction.replace(' ', '-')}">
+                            ${msg.prediction}
+                        </span>
+                    </td>
+                    <td>${(msg.confidence * 100).toFixed(1)}%</td>
+                    <td class="timestamp">${formatTimestamp(msg.timestamp)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePagination(data) {
+            totalPages = data.total_pages;
+            currentPage = data.page;
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+
+            // Previous button
+            paginationHTML += `
+                <button ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                paginationHTML += `<button onclick="changePage(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHTML += `<span>...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHTML += `<span>...</span>`;
+                }
+                paginationHTML += `<button onclick="changePage(${totalPages})">${totalPages}</button>`;
+            }
+
+            // Next button
+            paginationHTML += `
+                <button ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                loadMessages();
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        // Search functionality
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentSearch = e.target.value;
+                currentPage = 1;
+                loadMessages();
+            }, 500);
+        });
+
+        // Refresh button
+        refreshBtn.addEventListener('click', () => {
+            loadDashboard();
+        });
+
+        // Initialize
+        showPage('detection');
+    </script>
+</body>
+</html>
